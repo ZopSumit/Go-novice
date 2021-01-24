@@ -18,18 +18,18 @@ import (
 )
 
 type Customer struct {
-	ID   int    `json:id`
-	Name string `json:name`
-	DOB  string `json:dob`
-	Addr Address
+	ID   int     `json:id`
+	Name string  `json:name`
+	DOB  string  `json:dob`
+	Addr Address `json:addr`
 }
 
 type Address struct {
 	ID         int    `json:id`
-	StreetName string `json:streetname`
+	StreetName string `json:streetName`
 	City       string `json:city`
 	State      string `json:state`
-	CustomerID int    `json:cutomerid`
+	CustomerID int    `json:cutomerID`
 }
 
 var db *sql.DB
@@ -80,8 +80,6 @@ func getCustByID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	//fmt.Printf("yes after error id is %T, %v ", id, id)
-
 	query := `SELECT * FROM Customer INNER JOIN Address ON Customer.ID = Address.Customer_id and Customer.ID = ? ORDER BY Customer.ID, Address.ID;`
 	data = append(data, id)
 	rows, err := db.Query(query, data...)
@@ -93,16 +91,15 @@ func getCustByID(w http.ResponseWriter, r *http.Request) {
 		if err := rows.Scan(&c.ID, &c.Name, &c.DOB, &c.Addr.ID, &c.Addr.StreetName, &c.Addr.City, &c.Addr.State, &c.Addr.CustomerID); err != nil {
 			log.Fatal(err)
 		}
-		//fmt.Println("in loop c is ", c)
 		ans = append(ans, c)
 	}
-	//fmt.Println("ans is ", ans)
+
 	if c.Name == "" {
-		//fmt.Println("yes in Name")
+
 		w.WriteHeader(http.StatusNoContent)
 		return
 	}
-	//fmt.Println("yes at end")
+
 	json.NewEncoder(w).Encode(ans)
 }
 
@@ -133,7 +130,7 @@ func postCustData(w http.ResponseWriter, r *http.Request) {
 	m, _ := strconv.Atoi(x[1])
 	d, _ := strconv.Atoi(x[0])
 	getAge := getDOB(y, m, d)
-	fmt.Println(age.Age(getAge))
+	//fmt.Println(age.Age(getAge))
 	if age.Age(getAge) >= 18 {
 
 		var custValues []interface{}
@@ -177,7 +174,9 @@ func postCustData(w http.ResponseWriter, r *http.Request) {
 			}
 			ans = append(ans, c)
 		}
+		w.WriteHeader(http.StatusCreated)
 		json.NewEncoder(w).Encode(ans)
+
 	} else {
 		w.WriteHeader(http.StatusBadRequest)
 
@@ -239,7 +238,6 @@ func updateCustData(w http.ResponseWriter, r *http.Request) {
 func deleteCustData(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	params := mux.Vars(r)
-	getCustByID(w, r)
 	stmt, err := db.Prepare("DELETE FROM Customer WHERE ID = ?;")
 	if err != nil {
 		panic(err.Error())
@@ -248,8 +246,11 @@ func deleteCustData(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		fmt.Println("yes in nil")
-		w.WriteHeader(http.StatusBadRequest)
-		return
+
+	} else {
+
+		w.WriteHeader(http.StatusNoContent)
+
 	}
 }
 
